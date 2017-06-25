@@ -33,8 +33,8 @@ describe('Scope', function () {
       var watchFn = jasmine.createSpy()
       var listenFn = function () {}
 
-      $scope.$watch(watchFn, listenFn)
-      $scope.$digest()
+      scope.$watch(watchFn, listenFn)
+      scope.$digest()
 
       expect(watchFn).toHaveBeenCalledWith(scope)
     })
@@ -125,9 +125,9 @@ describe('Scope', function () {
       )
 
       scope.$watch(
-        function (scope) { return scope.counterA },
+        function (scope) { return scope.counterB },
         function (newValue, oldValue, scope) {
-          scope.counterB++
+          scope.counterA++
         }
       )
 
@@ -154,7 +154,28 @@ describe('Scope', function () {
 
       scope.array[0] = 250
       scope.$digest()
-      expect(watchExecutions).toBe(200)
+      expect(watchExecutions).toBe(301)
+    })
+
+    it('dose not end digest so that new watches are not run', function () {
+      scope.aValue = 'abc'
+      scope.counter = 0
+
+      scope.$watch(
+        function (scope) { return scope.aValue },
+        function (newValue, oldValue, scope) {
+          console.log('add watch')
+          scope.$watch(
+            function (scope) { return scope.aValue },
+            function (newValue, oldValue, scope) {
+              console.log(scope.counter++)
+            }
+          )
+        }
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
     })
   })
 

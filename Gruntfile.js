@@ -15,7 +15,8 @@ module.exports = function (grunt) {
           sinon: false
         },
         browser: true,
-        devel: true
+        devel: true,
+        asi: false
       }
     },
 
@@ -24,7 +25,7 @@ module.exports = function (grunt) {
         options: {
           framework: 'jasmine2',
           launch_in_dev: ['PhantomJS'],
-          before_tests: 'grunt jshint',
+          before_tests: 'grunt jshint --force',
           serve_files: [
             'node_modules/lodash/index.js',
             'node_modules/jquery/dist/jquery.js',
