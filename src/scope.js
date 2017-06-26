@@ -9,43 +9,45 @@
 
   var _initialValue = function () {};
 
-  var index = 0;
-
-  Scope.prototype.$watch = function (watchFn, listenerFn) {
+  Scope.prototype.$watch = function (watchFn, listenerFn, equalValue) {
     var watcher = {
       watchFn: watchFn,
       listenerFn: listenerFn ? listenerFn : _initialValue,
       lastValue: _initialValue,
-      isInitial: true
+      isInitial: true,
+      equalValue: equalValue
     };
 
     this.$$lastChangedWatcher = null;
     this.$$watchers.push(watcher);
-    this.$$index = index++;
   };
 
   Scope.prototype.$digest = function () {
     var vm = this;
-    var changed;
+    var dirty;
     var ttl = 10;
     var digestCounter = 0;
     this.$$lastChangedWatcher = null;
 
     do {
-      changed = false;
+      dirty = false;
       var length = vm.$$watchers.length;
 
       for (var watchIndex = 0; watchIndex < length; watchIndex++) {
         var watcher = vm.$$watchers[watchIndex];
         var value = watcher.watchFn.call(vm, vm);
+        var equalValue = watcher.equalValue;
+        var lastValue = watcher.lastValue;
+        var isInitial = watcher.isInitial;
 
-        if (value !== watcher.lastValue) {
-          changed = true;
+        if ((!equalValue && value !== lastValue && !(_.isNaN(value) && _.isNaN(lastValue)))
+          || (equalValue === true && !_.isEqual(value, lastValue))) {
+          dirty = true;
           vm.$$lastChangedWatcher = watcher;
-          watcher.lastValue = value;
-          watcher.listenerFn.call(vm, value, watcher.isInitial ? value : watcher.lastValue, vm);
+          watcher.lastValue = equalValue ? _.cloneDeep(value) : value;
+          watcher.listenerFn.call(vm, value, isInitial ? value : lastValue, vm);
 
-          if (watcher.isInitial) {
+          if (isInitial) {
             // 改变首次监听状态
             watcher.isInitial = false;
           }
@@ -59,7 +61,7 @@
       if (digestCounter++ >= ttl) {
         throw Error('$digest is 10 iterations');
       }
-    } while (changed);
+    } while (dirty);
   };
 })(window);
 

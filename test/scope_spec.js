@@ -177,6 +177,89 @@ describe('Scope', function () {
       scope.$digest()
       expect(scope.counter).toBe(1)
     })
-  })
 
+    it('compares based on value (array length) if enabled', function () {
+      scope.aValue = [1, 2, 3]
+      scope.counter = 0;
+
+      scope.$watch(
+        function (scope) { return scope.aValue },
+        function (newValue, oldValue, scope) {
+          scope.counter++
+        },
+        true
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+
+      scope.aValue.push(4)
+      scope.$digest()
+      expect(scope.counter).toBe(2)
+    })
+
+    it('compares based on value (object property) if enabled', function () {
+      scope.aValue = {
+        id: 1,
+        name: 'zk'
+      }
+      scope.counter = 0;
+
+      scope.$watch(
+        function (scope) { return scope.aValue },
+        function (newValue, oldValue, scope) {
+          scope.counter++
+        },
+        true
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+
+      scope.aValue.name = 'pyq'
+      scope.$digest()
+      expect(scope.counter).toBe(2)
+    })
+
+    it('compares based on value (object property in array) if enabled', function () {
+      scope.aValue = [
+        {id: 1, name: 'zk'},
+        {id: 2, name: 'pay'}
+      ]
+      scope.counter = 0;
+
+      scope.$watch(
+        function (scope) { return scope.aValue },
+        function (newValue, oldValue, scope) {
+          scope.counter++
+        },
+        true
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+
+      scope.aValue[1].name = 'pyq'
+      scope.$digest()
+      expect(scope.counter).toBe(2)
+    })
+
+    it('correctly handles NaNs', function () {
+      scope.number = 0 / 0;
+      scope.counter = 0;
+
+      scope.$watch(
+        function (scope) { return scope.number },
+        function (newValue, oldValue, scope) {
+          scope.counter++
+        }
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+    })
+  })
 })
