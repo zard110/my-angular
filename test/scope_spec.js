@@ -164,11 +164,11 @@ describe('Scope', function () {
       scope.$watch(
         function (scope) { return scope.aValue },
         function (newValue, oldValue, scope) {
-          console.log('add watch')
+
           scope.$watch(
             function (scope) { return scope.aValue },
             function (newValue, oldValue, scope) {
-              console.log(scope.counter++)
+              scope.counter++
             }
           )
         }
