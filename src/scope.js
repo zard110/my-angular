@@ -5,11 +5,12 @@
 
   function Scope () {
     this.$$watchers = [];
+    this.$$phase = undefined
   }
 
   var _initialValue = function () {};
 
-  Scope.prototype.$watch = function (watchFn, listenerFn, equalValue) {
+  Scope.prototype.$watch = function $watch(watchFn, listenerFn, equalValue) {
     var watcher = {
       watchFn: watchFn,
       listenerFn: listenerFn ? listenerFn : _initialValue,
@@ -22,7 +23,7 @@
     this.$$watchers.push(watcher);
   };
 
-  Scope.prototype.$digest = function () {
+  Scope.prototype.$digest = function $digest() {
     var vm = this;
     var dirty;
     var ttl = 10;
@@ -62,6 +63,22 @@
         throw Error('$digest is 10 iterations');
       }
     } while (dirty);
+  };
+
+  Scope.prototype.$eval = function $eval() {
+
+  };
+
+  Scope.prototype.$apply = function $apply() {
+
+  };
+
+  Scope.prototype.$evalAsync = function $evalAsync() {
+
+  };
+
+  Scope.prototype.$applyAsync = function $applyAsync() {
+
   };
 })(window);
 
