@@ -430,6 +430,9 @@ describe('Scope-->', function () {
     })
 
     it('allows async $apply with $applyAsync', function (done) {
+
+
+
       scope.aValue = 100
       scope.counter = 0
 
@@ -450,8 +453,11 @@ describe('Scope-->', function () {
       })
       expect(scope.counter).toBe(1)
 
+
+
       setTimeout(function () {
         expect(scope.counter).toBe(2)
+
         done()
       }, 50)
     })
@@ -459,6 +465,8 @@ describe('Scope-->', function () {
     it('never executes $applyAsync function in the same cycle', function (done) {
       scope.aValue = 100
       scope.asyncApplied = false
+
+      console.log('\nnever executes $applyAsync function in the same cycle')
 
       scope.$watch(
         function (scope) {
@@ -475,6 +483,7 @@ describe('Scope-->', function () {
       expect(scope.asyncApplied).toBe(false)
 
       setTimeout(function () {
+        console.log('\n')
         expect(scope.asyncApplied).toBe(true)
         done()
       }, 50)
