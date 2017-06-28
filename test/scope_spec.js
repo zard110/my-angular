@@ -466,7 +466,7 @@ describe('Scope-->', function () {
       scope.aValue = 100
       scope.asyncApplied = false
 
-      console.log('\nnever executes $applyAsync function in the same cycle')
+
 
       scope.$watch(
         function (scope) {
@@ -483,7 +483,6 @@ describe('Scope-->', function () {
       expect(scope.asyncApplied).toBe(false)
 
       setTimeout(function () {
-        console.log('\n')
         expect(scope.asyncApplied).toBe(true)
         done()
       }, 50)

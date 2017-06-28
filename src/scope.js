@@ -8,6 +8,7 @@
     this.$$phase = undefined;
     this.$$asyncQueue = [];
     this.$$applyAsyncQueue = [];
+    this.$$applyAsyncTaskId = null;
   }
 
   var _initialValue = function () {};
@@ -34,6 +35,13 @@
 
     this.$$beginPhase('$digest')
 
+    if (this.$$applyAsyncTaskId) {
+      this.$$applyAsyncTaskId = clearTimeout(this.$$applyAsyncTaskId)
+      while (this.$$applyAsyncQueue.length) {
+        this.$$applyAsyncQueue.shift()(this)
+      }
+    }
+
     do {
       dirty = false;
       var length = vm.$$watchers.length;
@@ -41,12 +49,6 @@
       while(vm.$$asyncQueue.length) {
         var evalAsyncTask = vm.$$asyncQueue.shift()
         evalAsyncTask()
-      }
-
-      while(vm.$$applyAsyncQueue.length) {
-        var applyAsyncTask = vm.$$applyAsyncQueue.shift()
-        applyAsyncTask()
-        vm.$$lastChangedWatcher = null;
       }
 
       for (var watchIndex = 0; watchIndex < length; watchIndex++) {
@@ -79,7 +81,7 @@
         throw Error('$digest is 10 iterations');
       }
 
-      console.log('vm.$$applyAsyncQueue.length', vm.$$applyAsyncQueue.length)
+
     } while (dirty || vm.$$asyncQueue.length);
 
     this.$$clearPhase();
@@ -119,20 +121,24 @@
 
   Scope.prototype.$applyAsync = function $applyAsync(expr) {
     var scope = this;
-    var applyFn = function () {
-      console.log('executes')
+    var applyFn = function (scope) {
+
       scope.$eval(expr)
     }
 
-    if (!scope.$$phase && !scope.$$applyAsyncQueue.length) {
-      setTimeout(function () {
-        if (scope.$$applyAsyncQueue.length) {
-          scope.$digest()
-        }
-      })
-    }
-
     scope.$$applyAsyncQueue.push(applyFn)
+
+    if (!this.$$applyAsyncTaskId) {
+      this.$$applyAsyncTaskId = setTimeout(function () {
+        scope.$apply(function (scope) {
+          while (scope.$$applyAsyncQueue.length) {
+            scope.$$applyAsyncQueue.shift()(scope)
+          }
+
+          scope.$$applyAsyncTaskId = null;
+        })
+      }, 0)
+    }
   };
 
   Scope.prototype.$$beginPhase = function $$beginPhase(phase) {
