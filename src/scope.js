@@ -11,13 +11,13 @@
     this.$$applyAsyncTaskId = null;
   }
 
-  var _initialValue = function () {};
+  var _initialWatchValue = function () {};
 
   Scope.prototype.$watch = function $watch(watchFn, listenerFn, equalValue) {
     var watcher = {
       watchFn: watchFn,
-      listenerFn: listenerFn ? listenerFn : _initialValue,
-      lastValue: _initialValue,
+      listenerFn: listenerFn ? listenerFn : function () {},
+      lastValue: _initialWatchValue,
       isInitial: true,
       equalValue: equalValue
     };
@@ -27,7 +27,7 @@
   };
 
   Scope.prototype.$digest = function $digest() {
-    var vm = this;
+    var self = this;
     var dirty;
     var ttl = 10;
     var digestCounter = 0;
@@ -44,48 +44,56 @@
 
     do {
       dirty = false;
-      var length = vm.$$watchers.length;
 
-      while(vm.$$asyncQueue.length) {
-        var evalAsyncTask = vm.$$asyncQueue.shift()
+      while(self.$$asyncQueue.length) {
+        var evalAsyncTask = self.$$asyncQueue.shift()
         evalAsyncTask()
       }
 
-      for (var watchIndex = 0; watchIndex < length; watchIndex++) {
-        var watcher = vm.$$watchers[watchIndex];
-        var value = watcher.watchFn.call(vm, vm);
-        var equalValue = watcher.equalValue;
-        var lastValue = watcher.lastValue;
-        var isInitial = watcher.isInitial;
-
-        if ((!equalValue && value !== lastValue && !(_.isNaN(value) && _.isNaN(lastValue)))
-          || (equalValue === true && !_.isEqual(value, lastValue))) {
-          dirty = true;
-          vm.$$lastChangedWatcher = watcher;
-          watcher.lastValue = equalValue ? _.cloneDeep(value) : value;
-          watcher.listenerFn.call(vm, value, isInitial ? value : lastValue, vm);
-
-          if (isInitial) {
-            // 改变首次监听状态
-            watcher.isInitial = false;
-          }
-        } else if (vm.$$lastChangedWatcher === watcher) {
-          // 如果上次循环中最后一个改变的watcher没有发生变化，则跳出循环
-          break;
-        }
-      }
+      dirty = this.$$digestOnce()
 
       // 单次循环超过10次抛异常，防止死循环
       if (digestCounter++ >= ttl) {
-        vm.$$clearPhase();
+        self.$$clearPhase();
         throw Error('$digest is 10 iterations');
       }
 
 
-    } while (dirty || vm.$$asyncQueue.length);
+    } while (dirty || self.$$asyncQueue.length);
 
     this.$$clearPhase();
   };
+
+  Scope.prototype.$$digestOnce = function () {
+    var self = this
+    var value, lastValue
+    var isEqualValue, isInitial, isDirty
+
+    _.forEach(this.$$watchers, function (watcher) {
+      value = watcher.watchFn.call(null, self);
+      isEqualValue = watcher.equalValue;
+      lastValue = watcher.lastValue;
+      isInitial = watcher.isInitial;
+
+      if ((!isEqualValue && value !== lastValue && !(_.isNaN(value) && _.isNaN(lastValue)))
+        || (isEqualValue === true && !_.isEqual(value, lastValue))) {
+        isDirty = true;
+        self.$$lastChangedWatcher = watcher;
+        watcher.lastValue = isEqualValue ? _.cloneDeep(value) : value;
+        watcher.listenerFn.call(self, value, isInitial ? value : lastValue, self);
+
+        if (isInitial) {
+          // 改变首次监听状态
+          watcher.isInitial = false;
+        }
+      } else if (self.$$lastChangedWatcher === watcher) {
+        // 如果上次循环中最后一个改变的watcher没有发生变化，则跳出循环
+        return false;
+      }
+    })
+
+    return isDirty
+  }
 
   Scope.prototype.$eval = function $eval(expr, locals) {
     return expr(this, locals)
